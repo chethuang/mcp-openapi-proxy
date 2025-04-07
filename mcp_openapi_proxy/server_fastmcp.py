@@ -13,6 +13,7 @@ Configuration is controlled via environment variables:
 
 import os
 import json
+import textwrap
 import requests
 from typing import Dict, Any, Optional
 from mcp import types
@@ -31,7 +32,7 @@ mcp = FastMCP("OpenApiProxy-Fast")
 
 spec = None  # Global spec for resources
 
-@mcp.tool()
+# @mcp.tool()
 def list_functions(*, env_key: str = "OPENAPI_SPEC_URL") -> str:
     """Lists available functions derived from the OpenAPI specification."""
     logger.debug("Executing list_functions tool.")
@@ -133,68 +134,68 @@ def list_functions(*, env_key: str = "OPENAPI_SPEC_URL") -> str:
                 "original_name": raw_name,
                 "inputSchema": input_schema
             }
-    functions["list_resources"] = {
-        "name": "list_resources",
-        "description": "List available resources",
-        "path": None,
-        "method": None,
-        "operationId": None,
-        "original_name": "list_resources",
-        "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
-    }
-    functions["read_resource"] = {
-        "name": "read_resource",
-        "description": "Read a resource by URI",
-        "path": None,
-        "method": None,
-        "operationId": None,
-        "original_name": "read_resource",
-        "inputSchema": {"type": "object", "properties": {"uri": {"type": "string", "description": "Resource URI"}}, "required": ["uri"], "additionalProperties": False}
-    }
-    functions["list_prompts"] = {
-        "name": "list_prompts",
-        "description": "List available prompts",
-        "path": None,
-        "method": None,
-        "operationId": None,
-        "original_name": "list_prompts",
-        "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
-    }
-    functions["get_prompt"] = {
-        "name": "get_prompt",
-        "description": "Get a prompt by name",
-        "path": None,
-        "method": None,
-        "operationId": None,
-        "original_name": "get_prompt",
-        "inputSchema": {"type": "object", "properties": {"name": {"type": "string", "description": "Prompt name"}}, "required": ["name"], "additionalProperties": False}
-    }
+    # functions["list_resources"] = {
+    #     "name": "list_resources",
+    #     "description": "List available resources",
+    #     "path": None,
+    #     "method": None,
+    #     "operationId": None,
+    #     "original_name": "list_resources",
+    #     "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
+    # }
+    # functions["read_resource"] = {
+    #     "name": "read_resource",
+    #     "description": "Read a resource by URI",
+    #     "path": None,
+    #     "method": None,
+    #     "operationId": None,
+    #     "original_name": "read_resource",
+    #     "inputSchema": {"type": "object", "properties": {"uri": {"type": "string", "description": "Resource URI"}}, "required": ["uri"], "additionalProperties": False}
+    # }
+    # functions["list_prompts"] = {
+    #     "name": "list_prompts",
+    #     "description": "List available prompts",
+    #     "path": None,
+    #     "method": None,
+    #     "operationId": None,
+    #     "original_name": "list_prompts",
+    #     "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
+    # }
+    # functions["get_prompt"] = {
+    #     "name": "get_prompt",
+    #     "description": "Get a prompt by name",
+    #     "path": None,
+    #     "method": None,
+    #     "operationId": None,
+    #     "original_name": "get_prompt",
+    #     "inputSchema": {"type": "object", "properties": {"name": {"type": "string", "description": "Prompt name"}}, "required": ["name"], "additionalProperties": False}
+    # }
     logger.debug(f"Discovered {len(functions)} functions from the OpenAPI specification.")
-    if "get_tasks_id" not in functions:
-        functions["get_tasks_id"] = {
-            "name": "get_tasks_id",
-            "description": "Get tasks",
-            "path": "/users/{user_id}/tasks",
-            "method": "GET",
-            "operationId": "get_users_tasks",
-            "original_name": "GET /users/{user_id}/tasks",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "user_id": {
-                        "type": "string",
-                        "description": "Path parameter user_id"
-                    }
-                },
-                "required": ["user_id"],
-                "additionalProperties": False
-            }
-        }
-        logger.debug("Forced registration of get_tasks_id for testing.")
+    # if "get_tasks_id" not in functions:
+    #     functions["get_tasks_id"] = {
+    #         "name": "get_tasks_id",
+    #         "description": "Get tasks",
+    #         "path": "/users/{user_id}/tasks",
+    #         "method": "GET",
+    #         "operationId": "get_users_tasks",
+    #         "original_name": "GET /users/{user_id}/tasks",
+    #         "inputSchema": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "user_id": {
+    #                     "type": "string",
+    #                     "description": "Path parameter user_id"
+    #                 }
+    #             },
+    #             "required": ["user_id"],
+    #             "additionalProperties": False
+    #         }
+    #     }
+    #     logger.debug("Forced registration of get_tasks_id for testing.")
     logger.debug(f"Functions list: {list(functions.values())}")
     return json.dumps(list(functions.values()), indent=2)
 
-@mcp.tool()
+# @mcp.tool()
 def call_function(*, function_name: str, parameters: Optional[Dict] = None, env_key: str = "OPENAPI_SPEC_URL") -> str:
     """Calls a function derived from the OpenAPI specification."""
     logger.debug(f"call_function invoked with function_name='{function_name}' and parameters={parameters}")
@@ -375,11 +376,39 @@ def run_simple_server():
     if spec is None:
         logger.error("Failed to fetch OpenAPI spec, no functions to preload.")
         sys.exit(1)
-    list_functions()
+    # list_functions()
+    functions = json.loads(list_functions())
+    for function_data in functions:
+        func_name = function_data["name"]
+        func_desc = function_data["description"]
+
+        # @mcp.tool(name=func_name, description=func_desc)
+        # def tool_function(parameters: dict = None, func_name=func_name):
+        #     return call_function(function_name=func_name, parameters=parameters)
+
+        property_keys = list(function_data['inputSchema']['properties'].keys())
+        param_str = ', '.join(property_keys)
+        key_value_pairs = [f"\"{item}\": {item}" for item in property_keys]
+        param_dict_str = "{ " + ", ".join(key_value_pairs) + " }"
+        # 使用 textwrap.dedent 去除多余的缩进
+        func_code = textwrap.dedent(f"""
+def tool_func({param_str}):
+    \"\"\"{func_desc}\"\"\"
+    return call_function(function_name='{func_name}', parameters={param_dict_str})
+""")
+        # 创建一个新的命名空间
+        namespace = {}
+        # 执行生成的代码字符串
+        exec(func_code, globals(), namespace)
+        # 从命名空间中获取函数对象
+        tool_function = namespace["tool_func"]
+
+        tool_function.__doc__ = func_desc
+        mcp.add_tool(fn = tool_function, name=func_name, description=func_desc)
 
     try:
         logger.debug("Starting MCP server (FastMCP version)...")
-        mcp.run(transport="stdio")
+        mcp.run(transport="sse")
     except Exception as e:
         logger.error(f"Unhandled exception in MCP server (FastMCP): {e}", exc_info=True)
         sys.exit(1)
