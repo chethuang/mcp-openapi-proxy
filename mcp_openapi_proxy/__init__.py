@@ -6,12 +6,12 @@ FastMCP Server (static tools) based on OPENAPI_SIMPLE_MODE env var.
 """
 
 import os
-import sys
 from dotenv import load_dotenv
-from mcp_openapi_proxy.logging_setup import setup_logging
+from mcp_openapi_proxy.utils import setup_logging
 
 # Load environment variables from .env if present
 load_dotenv()
+print(os.getcwd())
 
 def main():
     """
@@ -29,7 +29,7 @@ def main():
     OPENAPI_SIMPLE_MODE = os.getenv("OPENAPI_SIMPLE_MODE", "false").lower() in ("true", "1", "yes")
     if OPENAPI_SIMPLE_MODE:
         logger.debug("OPENAPI_SIMPLE_MODE is enabled. Launching FastMCP Server.")
-        from mcp_openapi_proxy.server_fastmcp import run_simple_server
+        from mcp_openapi_proxy.server_fast_ex import run_simple_server
         selected_server = run_simple_server
     else:
         logger.debug("OPENAPI_SIMPLE_MODE is disabled. Launching Low-Level Server.")

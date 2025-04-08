@@ -91,6 +91,21 @@ def is_tool_whitelisted(endpoint: str) -> bool:
     logger.debug(f"Endpoint {endpoint} not in whitelist - skipping.")
     return False
 
+def is_tool_whitelist_exact(endpoint: str) -> bool:
+    """Check if an endpoint is allowed based on TOOL_WHITELIST with exact match."""
+    whitelist = os.getenv("TOOL_WHITELIST_EXACT")
+    logger.debug(f"Checking exact whitelist - endpoint: {endpoint}, TOOL_WHITELIST_EXACT: {whitelist}")
+    if not whitelist:
+        logger.debug("No TOOL_WHITELIST_EXACT set, allowing all endpoints.")
+        return True
+    whitelist_entries = [entry.strip() for entry in whitelist.split(",")]
+    for entry in whitelist_entries:
+        if endpoint == entry:
+            logger.debug(f"Endpoint {endpoint} matches exact whitelist entry {entry}")
+            return True
+    logger.debug(f"Endpoint {endpoint} not in exact whitelist - skipping.")
+    return False
+
 def fetch_openapi_spec(url: str, retries: int = 3) -> Optional[Dict]:
     """Fetch and parse an OpenAPI specification from a URL with retries."""
     logger.debug(f"Fetching OpenAPI spec from URL: {url}")
