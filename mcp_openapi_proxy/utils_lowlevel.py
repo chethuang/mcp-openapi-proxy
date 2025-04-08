@@ -7,6 +7,7 @@ import sys
 import asyncio
 import json
 import requests
+from jsonpath_ng import parse
 from typing import List, Dict, Any
 import anyio
 from mcp import types
@@ -17,6 +18,7 @@ from mcp_openapi_proxy.utils import (
     normalize_tool_name,
     is_tool_whitelisted,
     is_tool_whitelist_exact,
+    parse_api_resp_json_path,
     fetch_openapi_spec,
     build_base_url,
     handle_auth,
@@ -48,6 +50,21 @@ prompts: List[types.Prompt] = [
 ]
 openapi_spec_data = None
 
+function_name_resp_json_path_mapping = {}
+
+def get_config_resp_json_path_text(function_name: str, resp_json: dict) -> str:
+    if not resp_json:
+        return None
+    if function_name not in function_name_resp_json_path_mapping:
+        return None
+    json_path_expr = function_name_resp_json_path_mapping.get(function_name)
+    logger.debug(f"fetch json path {function_name}: {json_path_expr}")
+    jsonpath_expr = parse(json_path_expr)
+    matches = jsonpath_expr.find(resp_json)
+    match_json = [match.value for match in matches]
+    if not match_json:
+        return None
+    return json.dumps(match_json)
 
 async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolResult:
     """Dispatcher handler that routes CallToolRequest to the appropriate function (tool)."""
@@ -137,6 +154,11 @@ async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolRe
             )
             response.raise_for_status()
             response_text = (response.text or "No response body").strip()
+
+            fetch_path_text = get_config_resp_json_path_text(function_name=function_name, resp_json=response.json())
+            if fetch_path_text:
+                response_text = fetch_path_text
+
             content =  types.TextContent(type="text", text=response_text, id=None)
             final_content = [content]
         except requests.exceptions.RequestException as e:
@@ -266,8 +288,15 @@ def register_functions(spec: Dict) -> List[types.Tool]:
                 )
                 tools.append(tool)
                 logger.debug(f"Registered function: {function_name} ({method.upper()} {path}) with inputSchema: {json.dumps(input_schema)}")
+
+                api_resp_json_path_mapping = parse_api_resp_json_path()
+                resp_json_path = api_resp_json_path_mapping[path]
+                global function_name_resp_json_path_mapping
+                function_name_resp_json_path_mapping[function_name] = resp_json_path
+
             except Exception as e:
                 logger.error(f"Error registering function for {method.upper()} {path}: {e}", exc_info=True)
+    logger.debug(f"API response JSON path mapping: {function_name_resp_json_path_mapping}")
     logger.debug(f"Registered {len(tools)} functions from OpenAPI spec.")
     return tools
 

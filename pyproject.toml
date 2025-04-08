@@ -20,6 +20,7 @@ dependencies = [
   "prance>=23.6.21.0",
   "openapi-spec-validator>=0.7.1",
   "jmespath>=1.0.1",
+  "jsonpath_ng",
 ]
 
 [project.scripts]

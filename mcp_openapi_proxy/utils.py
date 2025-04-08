@@ -106,6 +106,12 @@ def is_tool_whitelist_exact(endpoint: str) -> bool:
     logger.debug(f"Endpoint {endpoint} not in exact whitelist - skipping.")
     return False
 
+def parse_api_resp_json_path() -> Dict[str, str]:
+    """Parse the API_RESP_JSON_PATH environment variable into a dictionary."""
+    api_resp_json_path = os.getenv('API_RESP_JSON_PATH')
+    path_mappings = dict(mapping.split(':') for mapping in api_resp_json_path.split(','))
+    return path_mappings
+
 def fetch_openapi_spec(url: str, retries: int = 3) -> Optional[Dict]:
     """Fetch and parse an OpenAPI specification from a URL with retries."""
     logger.debug(f"Fetching OpenAPI spec from URL: {url}")
