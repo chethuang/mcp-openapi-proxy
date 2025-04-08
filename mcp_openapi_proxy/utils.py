@@ -109,6 +109,9 @@ def is_tool_whitelist_exact(endpoint: str) -> bool:
 def parse_api_resp_json_path() -> Dict[str, str]:
     """Parse the API_RESP_JSON_PATH environment variable into a dictionary."""
     api_resp_json_path = os.getenv('API_RESP_JSON_PATH')
+    if not api_resp_json_path:
+        logger.debug("No API_RESP_JSON_PATH set, returning empty mapping.")
+        return {}
     path_mappings = dict(mapping.split(':') for mapping in api_resp_json_path.split(','))
     return path_mappings
 

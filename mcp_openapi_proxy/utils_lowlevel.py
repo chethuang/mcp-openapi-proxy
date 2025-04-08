@@ -53,18 +53,31 @@ openapi_spec_data = None
 function_name_resp_json_path_mapping = {}
 
 def get_config_resp_json_path_text(function_name: str, resp_json: dict) -> str:
+    """Fetches the response JSON path text based on the function name."""
     if not resp_json:
         return None
-    if function_name not in function_name_resp_json_path_mapping:
-        return None
+
     json_path_expr = function_name_resp_json_path_mapping.get(function_name)
-    logger.debug(f"fetch json path {function_name}: {json_path_expr}")
-    jsonpath_expr = parse(json_path_expr)
-    matches = jsonpath_expr.find(resp_json)
-    match_json = [match.value for match in matches]
-    if not match_json:
+    if not json_path_expr:
         return None
-    return json.dumps(match_json)
+    
+    logger.debug(f"Fetching json path {function_name}: {json_path_expr}")
+
+    jsonpath_expr = parse(json_path_expr)
+    matches = [match.value for match in jsonpath_expr.find(resp_json)]
+
+    if not matches:
+        return None
+    return json.dumps(matches)
+
+def update_function_name_mapping(function_name: str, path: str):
+    """
+    Updates the function_name_resp_json_path_mapping dictionary with the
+    response JSON path corresponding to the given path and function name.
+    """
+    api_resp_json_path_mapping = parse_api_resp_json_path()
+    global function_name_resp_json_path_mapping
+    function_name_resp_json_path_mapping[function_name] = api_resp_json_path_mapping[path]
 
 async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolResult:
     """Dispatcher handler that routes CallToolRequest to the appropriate function (tool)."""
@@ -289,10 +302,7 @@ def register_functions(spec: Dict) -> List[types.Tool]:
                 tools.append(tool)
                 logger.debug(f"Registered function: {function_name} ({method.upper()} {path}) with inputSchema: {json.dumps(input_schema)}")
 
-                api_resp_json_path_mapping = parse_api_resp_json_path()
-                resp_json_path = api_resp_json_path_mapping[path]
-                global function_name_resp_json_path_mapping
-                function_name_resp_json_path_mapping[function_name] = resp_json_path
+                update_function_name_mapping(function_name, path)
 
             except Exception as e:
                 logger.error(f"Error registering function for {method.upper()} {path}: {e}", exc_info=True)

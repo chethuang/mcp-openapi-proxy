@@ -36,12 +36,12 @@ class FastMCPEX(FastMCP):
                
         super().__init__(name, **settings)
 
-    def reset_tool_list_request_handler(self, handler: Callable):
+    def set_tool_list_request_handler(self, handler: Callable):
         
         self._mcp_server.request_handlers[types.ListToolsRequest] = handler
         
         
-    def reset_tool_request_handler(self, handler: Callable):
+    def set_tool_request_handler(self, handler: Callable):
         self._mcp_server.request_handlers[types.CallToolRequest] = handler
         
 
@@ -65,8 +65,8 @@ def run_simple_server():
         sys.exit(1)
     utils_lowlevel.register_functions(utils_lowlevel.openapi_spec_data)
     
-    mcp.reset_tool_list_request_handler(utils_lowlevel.list_tools)
-    mcp.reset_tool_request_handler(utils_lowlevel.dispatcher_handler)
+    mcp.set_tool_list_request_handler(utils_lowlevel.list_tools)
+    mcp.set_tool_request_handler(utils_lowlevel.dispatcher_handler)
 
     try:
         logger.debug("Starting MCP server (FastMCPEX version)...")
