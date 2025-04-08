@@ -122,10 +122,10 @@ async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolRe
         else:
             logger.debug("No valid parameters provided, proceeding without params/body")
 
-        logger.debug(f"API Request - URL: {api_url}, Method: {method}")
-        logger.debug(f"Headers: {headers}")
-        logger.debug(f"Query Params: {request_params}")
-        logger.debug(f"Request Body: {request_body}")
+        logger.info(f"API Request - URL: {api_url}, Method: {method}")
+        logger.info(f"Headers: {headers}")
+        logger.info(f"Query Params: {request_params}")
+        logger.info(f"Request Body: {request_body}")
 
         try:
             response = requests.request(
@@ -142,7 +142,7 @@ async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolRe
         except requests.exceptions.RequestException as e:
             logger.error(f"API request failed: {e}")
             return types.CallToolResult(content=[types.TextContent(type="text", text=str(e))], isError=False)
-        logger.debug(f"Response sent to client: {content}")
+        logger.info(f"Response sent to client: {content}")
         return types.CallToolResult(content=final_content, isError=False)
     except Exception as e:
         logger.error(f"Unhandled exception in dispatcher_handler: {e}", exc_info=True)

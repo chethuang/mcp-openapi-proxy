@@ -17,6 +17,7 @@ def setup_logging(debug: bool = False) -> logging.Logger:
         formatter = logging.Formatter("[%(levelname)s] %(asctime)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+        logger.propagate = False
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
     logger.debug("Logging configured")
     return logger
