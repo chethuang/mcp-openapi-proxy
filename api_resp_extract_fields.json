@@ -1,0 +1,12 @@
+{
+    "/token/search": [
+        "symbol",
+        "contractAddress",
+        "name",
+        "logoUrl",
+        "priceInTrx",
+        "marketCap",
+        "volume24Hr",
+        "priceChange24Hr"
+    ]
+}

@@ -18,7 +18,8 @@ from mcp_openapi_proxy.utils import (
     normalize_tool_name,
     is_tool_whitelisted,
     is_tool_whitelist_exact,
-    parse_api_resp_json_path,
+    extract_keys,
+    read_api_resp_extract_fields_config,
     fetch_openapi_spec,
     build_base_url,
     handle_auth,
@@ -50,34 +51,34 @@ prompts: List[types.Prompt] = [
 ]
 openapi_spec_data = None
 
-function_name_resp_json_path_mapping = {}
+function_name_resp_json_fields_mapping : Dict[str, List[str]] = {}
 
 def get_config_resp_json_path_text(function_name: str, resp_json: dict) -> str:
-    """Fetches the response JSON path text based on the function name."""
+    """Get the extracted fields for a given function name."""
     if not resp_json:
         return None
 
-    json_path_expr = function_name_resp_json_path_mapping.get(function_name)
+    json_path_expr = function_name_resp_json_fields_mapping.get(function_name)
     if not json_path_expr:
         return None
     
     logger.debug(f"Fetching json path {function_name}: {json_path_expr}")
 
-    jsonpath_expr = parse(json_path_expr)
-    matches = [match.value for match in jsonpath_expr.find(resp_json)]
+    matches = extract_keys(resp_json, json_path_expr)
 
     if not matches:
         return None
     return json.dumps(matches)
 
 def update_function_name_mapping(function_name: str, path: str):
-    """
-    Updates the function_name_resp_json_path_mapping dictionary with the
-    response JSON path corresponding to the given path and function name.
-    """
-    api_resp_json_path_mapping = parse_api_resp_json_path()
-    global function_name_resp_json_path_mapping
-    function_name_resp_json_path_mapping[function_name] = api_resp_json_path_mapping[path]
+    """Update the mapping of function names to JSON path expressions."""
+    api_resp_extract_fields_config = read_api_resp_extract_fields_config()
+    if not api_resp_extract_fields_config:
+        return
+    global function_name_resp_json_fields_mapping
+    if path not in api_resp_extract_fields_config:
+        return
+    function_name_resp_json_fields_mapping[function_name] = api_resp_extract_fields_config[path]
 
 async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolResult:
     """Dispatcher handler that routes CallToolRequest to the appropriate function (tool)."""
@@ -306,7 +307,6 @@ def register_functions(spec: Dict) -> List[types.Tool]:
 
             except Exception as e:
                 logger.error(f"Error registering function for {method.upper()} {path}: {e}", exc_info=True)
-    logger.debug(f"API response JSON path mapping: {function_name_resp_json_path_mapping}")
     logger.debug(f"Registered {len(tools)} functions from OpenAPI spec.")
     return tools
 

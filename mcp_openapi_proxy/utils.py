@@ -8,7 +8,7 @@ import sys
 import json
 import requests
 import yaml
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from mcp import types
 
 # Import the configured logger
@@ -106,14 +106,33 @@ def is_tool_whitelist_exact(endpoint: str) -> bool:
     logger.debug(f"Endpoint {endpoint} not in exact whitelist - skipping.")
     return False
 
-def parse_api_resp_json_path() -> Dict[str, str]:
-    """Parse the API_RESP_JSON_PATH environment variable into a dictionary."""
-    api_resp_json_path = os.getenv('API_RESP_JSON_PATH')
-    if not api_resp_json_path:
-        logger.debug("No API_RESP_JSON_PATH set, returning empty mapping.")
+def read_api_resp_extract_fields_config() -> Dict:
+    """Read the API_RESP_EXTRACT_FIELDS_CONFIG_FILE and return the config as a dictionary."""
+    config_path = os.getenv("API_RESP_EXTRACT_FIELDS_CONFIG_FILE")
+    if not config_path:
+        logger.debug("No API_RESP_EXTRACT_FIELDS_CONFIG_FILE set")
         return {}
-    path_mappings = dict(mapping.split(':') for mapping in api_resp_json_path.split(','))
-    return path_mappings
+    with open(config_path, 'r', encoding='utf-8') as file:
+        config_data = json.load(file)
+        return config_data
+    
+def extract_keys(data: dict, keys_to_extract: List[str]) -> Dict:
+    """Recursively extract specified keys from a nested dictionary."""
+    if isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            extracted_value = extract_keys(value, keys_to_extract)
+            if key in keys_to_extract:
+                result[key] = value
+            elif extracted_value:
+                result[key] = extracted_value
+        return result
+    elif isinstance(data, list):
+        extracted_list = [extract_keys(item, keys_to_extract) for item in data]
+        extracted_list = [item for item in extracted_list if item]
+        return extracted_list if extracted_list else None
+    else:
+        return None
 
 def fetch_openapi_spec(url: str, retries: int = 3) -> Optional[Dict]:
     """Fetch and parse an OpenAPI specification from a URL with retries."""
