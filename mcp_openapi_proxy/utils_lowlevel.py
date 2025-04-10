@@ -6,6 +6,7 @@ import os
 import sys
 import asyncio
 import json
+import time
 import requests
 from jsonpath_ng import parse
 from typing import List, Dict, Any
@@ -159,13 +160,17 @@ async def dispatcher_handler(request: types.CallToolRequest) -> types.CallToolRe
         logger.info(f"Request Body: {request_body}")
 
         try:
+            start_time = time.time()
             response = requests.request(
                 method=method,
                 url=api_url,
                 headers=headers,
                 params=request_params if method == "GET" else None,
-                json=request_body if method != "GET" else None
+                json=request_body if method != "GET" else None,
+                timeout=float(os.getenv("API_REQUEST_TIMEOUT_SECOND", 30)),
             )
+            duration = time.time() - start_time
+            logger.info(f"API Request {api_url} - Duration: {duration} seconds")
             response.raise_for_status()
             response_text = (response.text or "No response body").strip()
 
